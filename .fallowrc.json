@@ -1,0 +1,77 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": ["src/main.{js,jsx,ts,tsx}"],
+  "ignorePatterns": [
+    "**/*.test.{js,jsx,ts,tsx}",
+    "**/*.spec.{js,jsx,ts,tsx}",
+    "src/tests/**",
+    "**/tests/**",
+    "**/__tests__/**",
+    "**/dist/**",
+    "**/build/**",
+    "coverage/**",
+    "jest.config.cjs",
+    "jest.setup.cjs",
+    "babel.jest.cjs",
+    "scripts/**",
+    "src/App.css"
+  ],
+  "ignoreDependencies": [
+    "@babel/core",
+    "@babel/preset-env",
+    "@babel/preset-react",
+    "@babel/preset-typescript",
+    "@lavamoat/allow-scripts",
+    "@tailwindcss/vite",
+    "@testing-library/dom",
+    "@testing-library/jest-dom",
+    "@testing-library/react",
+    "@testing-library/user-event",
+    "@types/jest",
+    "@types/node",
+    "@types/react",
+    "@types/react-dom",
+    "@vitejs/plugin-react",
+    "babel-jest",
+    "fallow",
+    "husky",
+    "jest",
+    "jest-environment-jsdom",
+    "oxc-transform-react",
+    "oxfmt",
+    "oxlint",
+    "oxlint-tsgolint",
+    "tailwindcss",
+    "typescript",
+    "vite"
+  ],
+  "duplicates": {
+    "minOccurrences": 2,
+    "ignore": [
+      "**/dist/**",
+      "**/build/**",
+      "**/node_modules/**",
+      "coverage/**"
+    ],
+    "mode": "mild"
+  },
+  "health": {
+    "ignore": [
+      "src/tests/**",
+      "**/tests/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.test.{js,jsx,ts,tsx}",
+      "**/*.spec.{js,jsx,ts,tsx}",
+      "src/App.css",
+      "scripts/**",
+      "src/App.tsx",
+      "src/hooks/useYouTubeVideo.ts"
+    ]
+  },
+  "rules": {
+    "circular-dependencies": "error",
+    "unused-types": "off",
+    "unused-exports": "off"
+  }
+}
