@@ -294,7 +294,7 @@ function App() {
     : '';
 
   const busy =
-    status === 'queued' || status === 'slicing' || status === 'downloading';
+    status === 'queued' || status === 'downloading' || status === 'merging';
   const clipLen = Math.max(0, Math.round(end - start));
   const downloadLabel = downloadButtonLabel({
     mode,

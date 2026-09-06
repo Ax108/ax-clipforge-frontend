@@ -116,6 +116,10 @@ export function isVideoFormat(format: MediaFormat): boolean {
   return format === 'mp4';
 }
 
+export function isAudioFormat(format: MediaFormat): boolean {
+  return AUDIO_FORMATS.includes(format);
+}
+
 export function defaultQualityFor(format: MediaFormat): string {
   return isVideoFormat(format) ? '1080p' : '320kbps';
 }

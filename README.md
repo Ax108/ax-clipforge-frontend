@@ -2,7 +2,9 @@
 
 Standalone Vite + React frontend for trimming, previewing, and downloading YouTube videos or timestamped clips.
 
-Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview the original and cropped players, then trigger a download job. Backend calls live in `src/services/api.ts` (mockable today; swap in a live Express API later via `VITE_API_URL`).
+Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview, then download. In-app Download talks to [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend): `POST /api/v1/jobs` for MP4, `POST /api/v1/audio/jobs` for MP3/M4A/FLAC, then live SSE progress. Set `VITE_API_URL` if the API is not `http://localhost:5000/api/v1`. Load/title still uses YouTube oEmbed.
+
+Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING.md) · [Deployment](./docs/DEPLOYMENT.md)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-20232a?style=for-the-badge&logo=react&logoColor=%2361DAFB)
@@ -17,7 +19,7 @@ Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview the or
 - Two-way URL state (`?v=&start=&end=&format=&quality=&mode=&view=`)
 - MP4 1080p/720p/480p and audio MP3/M4A/FLAC
 - Copyable direct-download API URL and workspace share link
-- Mock download job with progress, toasts, and keyboard shortcuts (Space, `[`, `]`, R)
+- Live extract progress from yt-dlp (queued / downloading % / merging), toasts, shortcuts (Space, `[`, `]`, R)
 
 ## Stack
 
@@ -37,10 +39,12 @@ Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview the or
 ## Setup
 
 ```bash
-bun install
+bun install --frozen-lockfile
 bun run allow-scripts
 bun run dev
 ```
+
+Prefer `--frozen-lockfile` so install matches `bun.lock` (same as CI). Use plain `bun install` or `bun add` only when you intend to change dependencies.
 
 `bunfig.toml` sets `ignoreScripts = true`. Follow install with `bun run allow-scripts` so only allow-listed native install scripts run (`esbuild`, `unrs-resolver`, `core-js`).
 
@@ -81,7 +85,7 @@ ax-clipforge-frontend/
 │   │   ├── controls/            # URL, mode, trim, format, API URL
 │   │   └── ui/                  # Toasts, download progress
 │   ├── hooks/                   # YouTube player, URL sync, download job, toasts
-│   ├── services/api.ts          # Mock API client (VITE_API_URL)
+│   ├── services/api.ts          # Express client (jobs, audio jobs, oEmbed load)
 │   ├── types/index.ts
 │   ├── lib/utils.ts
 │   ├── tests/

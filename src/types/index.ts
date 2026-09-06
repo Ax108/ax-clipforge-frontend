@@ -31,8 +31,8 @@ export interface DownloadRequest {
 export type DownloadStatus =
   | 'idle'
   | 'queued'
-  | 'slicing'
   | 'downloading'
+  | 'merging'
   | 'complete'
   | 'error';
 

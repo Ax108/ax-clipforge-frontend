@@ -62,12 +62,15 @@ describe('fetchVideoInfo', () => {
 });
 
 describe('buildDownloadUrl / triggerDownload', () => {
+  const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+
   beforeEach(() => {
-    jest.useFakeTimers();
+    fetchMock.mockReset();
+    global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('encodes clip bounds on the download url', () => {
@@ -85,9 +88,34 @@ describe('buildDownloadUrl / triggerDownload', () => {
     expect(url).toContain('end=10');
   });
 
-  it('walks progress statuses then returns a download url', async () => {
+  it('uses the dedicated audio extract path for mp3/m4a/flac', () => {
+    const url = buildDownloadUrl({
+      url: 'https://youtu.be/dQw4w9wgGcQ',
+      format: 'mp3',
+      quality: '320kbps',
+    });
+    expect(url).toContain('/api/v1/audio?');
+    expect(url).not.toContain('/api/v1/download');
+    expect(url).toContain('format=mp3');
+    expect(url).toContain('quality=320kbps');
+  });
+
+  it('returns the cached file url when POST /jobs is already complete', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'job-1',
+        cacheKey: 'dQw4w9wgGcQ_mp4_1080p_full',
+        stage: 'complete',
+        percent: 100,
+        message: 'Using cached extract',
+        cached: true,
+        fileUrl: 'http://localhost:5000/api/v1/jobs/job-1/file',
+      }),
+    } as Response);
+
     const statuses: string[] = [];
-    const pending = triggerDownload(
+    const result = await triggerDownload(
       {
         url: 'https://youtu.be/dQw4w9wgGcQ',
         format: 'mp4',
@@ -97,12 +125,40 @@ describe('buildDownloadUrl / triggerDownload', () => {
         statuses.push(p.status);
       },
     );
-    await jest.runAllTimersAsync();
-    const result = await pending;
-    expect(result).toContain('/api/v1/download');
-    expect(statuses).toContain('queued');
-    expect(statuses).toContain('slicing');
-    expect(statuses).toContain('downloading');
+    expect(result).toContain('/api/v1/jobs/job-1/file');
     expect(statuses).toContain('complete');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/jobs$/),
+      expect.objectContaining({method: 'POST'}),
+    );
+  });
+
+  it('starts audio extracts on POST /audio/jobs', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'job-audio',
+        cacheKey: 'dQw4w9wgGcQ_mp3_320kbps_full',
+        stage: 'complete',
+        percent: 100,
+        message: 'Using cached extract',
+        cached: true,
+        fileUrl: 'http://localhost:5000/api/v1/jobs/job-audio/file',
+      }),
+    } as Response);
+
+    const result = await triggerDownload(
+      {
+        url: 'https://youtu.be/dQw4w9wgGcQ',
+        format: 'mp3',
+        quality: '320kbps',
+      },
+      () => {},
+    );
+    expect(result).toContain('/api/v1/jobs/job-audio/file');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/v1/audio/jobs'),
+      expect.objectContaining({method: 'POST'}),
+    );
   });
 });

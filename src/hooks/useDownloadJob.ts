@@ -1,20 +1,10 @@
 import {useCallback, useRef, useState} from 'react';
-import {triggerDownload, type DownloadProgress} from '../services/api';
+import {
+  startBrowserDownload,
+  triggerDownload,
+  type DownloadProgress,
+} from '../services/api';
 import type {DownloadRequest, DownloadStatus} from '../types';
-
-function saveMockFile(params: DownloadRequest) {
-  if (typeof document === 'undefined') return;
-  const blob = new Blob(
-    [`ClipForge mock extract\n${params.url}\nformat=${params.format}`],
-    {type: 'text/plain'},
-  );
-  const href = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = href;
-  a.download = `clipforge.${params.format}`;
-  a.click();
-  URL.revokeObjectURL(href);
-}
 
 export function useDownloadJob() {
   const [status, setStatus] = useState<DownloadStatus>('idle');
@@ -36,7 +26,7 @@ export function useDownloadJob() {
       });
       setResultUrl(url);
       setStatus('complete');
-      saveMockFile(params);
+      startBrowserDownload(url);
     } catch (e) {
       setStatus('error');
       setMessage(e instanceof Error ? e.message : 'Download failed');
