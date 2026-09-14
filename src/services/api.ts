@@ -100,6 +100,27 @@ function extractUrlPath(format: DownloadRequest['format']): string {
   return isAudioFormat(format) ? '/audio' : '/download';
 }
 
+const RATE_LIMIT_TOAST = 'Too many downloads — try again in a few minutes.';
+
+/** Map API start-job failures to a user-facing message (429 → clear rate-limit toast). */
+export function formatStartJobError(
+  status: number,
+  body: {error?: string; message?: string},
+  retryAfterHeader: string | null,
+): string {
+  if (status === 429 || body.error === 'rate_limited') {
+    if (retryAfterHeader && /^\d+$/.test(retryAfterHeader.trim())) {
+      const seconds = Number(retryAfterHeader.trim());
+      if (seconds > 0 && seconds < 7200) {
+        const mins = Math.max(1, Math.ceil(seconds / 60));
+        return `Too many downloads — try again in about ${mins} minute${mins === 1 ? '' : 's'}.`;
+      }
+    }
+    return RATE_LIMIT_TOAST;
+  }
+  return body.message || body.error || 'Could not start extract';
+}
+
 export async function triggerDownload(
   params: DownloadRequest,
   onProgress: (p: DownloadProgress) => void,
@@ -109,15 +130,29 @@ export async function triggerDownload(
     headers: {'content-type': 'application/json'},
     body: JSON.stringify(params),
   });
-  const job = (await res.json()) as JobPublic & {error?: string};
+  let body: JobPublic & {error?: string; message?: string} = {
+    id: '',
+    cacheKey: '',
+    stage: 'error',
+    percent: 0,
+    message: '',
+    cached: false,
+  };
+  try {
+    body = (await res.json()) as JobPublic & {error?: string; message?: string};
+  } catch {
+    /* non-JSON error body */
+  }
   if (!res.ok) {
-    throw new Error(job.message || job.error || 'Could not start extract');
+    throw new Error(
+      formatStartJobError(res.status, body, res.headers.get('Retry-After')),
+    );
   }
-  onProgress(toProgress(job));
-  if (job.stage === 'complete' && job.fileUrl) {
-    return job.fileUrl;
+  onProgress(toProgress(body));
+  if (body.stage === 'complete' && body.fileUrl) {
+    return body.fileUrl;
   }
-  return listenJobEvents(job.id, onProgress);
+  return listenJobEvents(body.id, onProgress);
 }
 
 function listenJobEvents(

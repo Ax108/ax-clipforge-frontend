@@ -5,7 +5,7 @@ Standalone Vite + React frontend for trimming, previewing, and downloading YouTu
 Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview, then download.
 
 - **Load / preview** uses YouTube oEmbed + iframes in the browser. No Express or yt-dlp. The URL bar **X** clears the field and resets the whole workspace.
-- **Download** talks to [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend): `POST /api/v1/jobs` (MP4) or `POST /api/v1/audio/jobs` (MP3/M4A/FLAC), live SSE progress, then the browser saves the file to the device.
+- **Download** talks to [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend): `POST /api/v1/jobs` (MP4) or `POST /api/v1/audio/jobs` (MP3/M4A/FLAC), live SSE progress, then the browser saves the file to the device. A **429** rate limit shows a clear toast (“Too many downloads — try again…”); opening the copyable `/download` or `/audio` URL in a new tab is outside the UI and only gets the raw API response.
 - Set `VITE_API_URL` if the API is not `http://localhost:5000/api/v1` (see [`.env.example`](./.env.example)).
 
 Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING.md) · [Deployment](./docs/DEPLOYMENT.md)
@@ -23,7 +23,7 @@ Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING
 - Two-way URL state (`?v=&start=&end=&format=&quality=&mode=&view=`)
 - MP4 1080p/720p/480p and audio MP3/M4A/FLAC
 - Copyable direct-download API URL (`/download` or `/audio`) and workspace share link
-- Live extract progress from yt-dlp (queued / downloading % / merging), toasts, shortcuts (Space, `[`, `]`, R)
+- Live extract progress from yt-dlp (queued / downloading % / merging), toasts (including rate-limit 429), shortcuts (Space, `[`, `]`, R)
 - Clear/reset (URL bar X) returns to the empty splash workspace
 
 ## Stack

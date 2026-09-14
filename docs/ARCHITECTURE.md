@@ -8,6 +8,7 @@ The API is a separate GitHub project: [https://github.com/Ax108/ax-clipforge-bac
 
 - Load/preview uses YouTube oEmbed for title/channel (browser only). Duration comes from the IFrame player. Does **not** call Express or yt-dlp.
 - Download is live: MP4 uses `POST /api/v1/jobs`; MP3/M4A/FLAC use `POST /api/v1/audio/jobs`. Both listen on SSE `/jobs/:id/events` and save `/jobs/:id/file` to the user's device.
+- API **429** / `rate_limited` on job start becomes a friendly error toast via `formatStartJobError` (optional `Retry-After` → “about N minutes”). Direct `/download` or `/audio` links opened outside the app only see the raw API JSON.
 - `VITE_API_URL` defaults to `http://localhost:5000/api/v1` (see `.env.example`). Trailing slashes are stripped. Hosted builds only change this env — no code change.
 - Same clip parameters are cached on the API. Progress events are real yt-dlp lines, not timers.
 
@@ -26,8 +27,8 @@ A hosted frontend **cannot** call Docker on your PC. See [DEPLOYMENT.md](./DEPLO
 2. URL bar **X** clears the input and resets players, trim, format, job, and share query params (empty splash again).
 3. Full Video vs Precision Clip (one-second minimum gap).
 4. Dual preview, dual-handle slider, format chips.
-5. Download: real job progress (`queued` / `downloading` / `merging` / `complete`). Cached repeats skip YouTube.
-6. Copyable `GET /api/v1/download?...` for video curl, `GET /api/v1/audio?...` for audio curl (same cache as `format=mp3|m4a|flac`).
+5. Download: real job progress (`queued` / `downloading` / `merging` / `complete`). Cached repeats skip YouTube. Rate-limit **429** → toast “Too many downloads — try again…”.
+6. Copyable `GET /api/v1/download?...` for video curl, `GET /api/v1/audio?...` for audio curl (same cache as `format=mp3|m4a|flac`). Those URLs are not toasted by the UI if opened directly.
 7. Query string `?v=&start=&end=&format=&quality=&mode=&view=`.
 8. Shortcuts: Space, `[`, `]`, `R`.
 
@@ -39,6 +40,7 @@ No Zustand.
 URL bar → YouTube oEmbed (title) + iframes (duration from player)
 URL bar X → reset workspace (no API call)
 Download → POST /jobs (mp4) or POST /audio/jobs (audio)
+         → 429 rate_limited → error toast (friendly copy)
          → EventSource /jobs/:id/events → GET /jobs/:id/file
 Direct URL card → GET /download?... (mp4) or GET /audio?... (audio)
 ```

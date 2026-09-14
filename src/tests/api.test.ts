@@ -2,6 +2,7 @@ import {afterEach, beforeEach, describe, expect, it, jest} from '@jest/globals';
 import {
   buildDownloadUrl,
   fetchVideoInfo,
+  formatStartJobError,
   parseVideoId,
   triggerDownload,
 } from '../services/api';
@@ -165,5 +166,42 @@ describe('buildDownloadUrl / triggerDownload', () => {
       expect.stringContaining('/api/v1/audio/jobs'),
       expect.objectContaining({method: 'POST'}),
     );
+  });
+
+  it('throws a clear toast message when the API returns 429', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      headers: {get: (name: string) => (name === 'Retry-After' ? '120' : null)},
+      json: async () => ({
+        error: 'rate_limited',
+        message: 'Too many extract requests from this IP.',
+      }),
+    } as unknown as Response);
+
+    await expect(
+      triggerDownload(
+        {
+          url: 'https://youtu.be/dQw4w9wgGcQ',
+          format: 'mp4',
+          quality: '1080p',
+        },
+        () => {},
+      ),
+    ).rejects.toThrow('Too many downloads — try again in about 2 minutes.');
+  });
+});
+
+describe('formatStartJobError', () => {
+  it('uses a friendly default for rate_limited without Retry-After', () => {
+    expect(formatStartJobError(429, {error: 'rate_limited'}, null)).toBe(
+      'Too many downloads — try again in a few minutes.',
+    );
+  });
+
+  it('passes through other API errors', () => {
+    expect(
+      formatStartJobError(503, {message: 'yt-dlp is not installed'}, null),
+    ).toBe('yt-dlp is not installed');
   });
 });

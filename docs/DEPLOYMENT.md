@@ -12,7 +12,7 @@ bun run dev
 
 UI: `http://localhost:5173`
 
-Download needs the Express API on `:5000` ([https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend)). `VITE_API_URL` defaults to `http://localhost:5000/api/v1` (copy `.env.example` → `.env.local` to override). Load/preview works without that API (oEmbed + YouTube iframes).
+Download needs the Express API on `:5000` ([https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend)). `VITE_API_URL` defaults to `http://localhost:5000/api/v1` (copy `.env.example` → `.env.local` to override). Load/preview works without that API (oEmbed + YouTube iframes). If the API rate-limits the UI (`429`), Download shows a toast; hammering extract from one IP can hit the backend `RATE_LIMIT_EXTRACT_MAX` (default 10 / 15 minutes).
 
 The API can run as `bun run dev` or `bun run docker:up` (Redis sidecar). That is local Docker, not a public API.
 
