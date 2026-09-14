@@ -16,13 +16,11 @@ describe('fetchVideoInfo', () => {
   const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
 
   beforeEach(() => {
-    jest.useFakeTimers();
     fetchMock.mockReset();
     global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -30,7 +28,7 @@ describe('fetchVideoInfo', () => {
     await expect(fetchVideoInfo('nope')).rejects.toThrow('Invalid YouTube URL');
   });
 
-  it('returns oEmbed metadata when fetch succeeds', async () => {
+  it('loads title/channel from YouTube oEmbed (not the Express API)', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -39,25 +37,32 @@ describe('fetchVideoInfo', () => {
       }),
     } as Response);
 
-    const pending = fetchVideoInfo('https://youtu.be/dQw4w9wgGcQ');
-    await jest.advanceTimersByTimeAsync(500);
-    const meta = await pending;
+    const meta = await fetchVideoInfo('https://youtu.be/dQw4w9wgGcQ');
 
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('youtube.com/oembed'),
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/info/),
+      expect.anything(),
+    );
     expect(meta.id).toBe('dQw4w9wgGcQ');
     expect(meta.title).toBe('Never Gonna Give You Up');
     expect(meta.channel).toBe('Rick');
+    expect(meta.duration).toBe(0);
     expect(meta.thumbnailUrl).toContain('dQw4w9wgGcQ');
   });
 
-  it('keeps defaults when oEmbed fails', async () => {
-    fetchMock.mockRejectedValue(new Error('offline'));
+  it('still opens the workspace when oEmbed fails', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      json: async () => ({}),
+    } as Response);
 
-    const pending = fetchVideoInfo('dQw4w9wgGcQ');
-    await jest.advanceTimersByTimeAsync(500);
-    const meta = await pending;
-
+    const meta = await fetchVideoInfo('dQw4w9wgGcQ');
+    expect(meta.id).toBe('dQw4w9wgGcQ');
     expect(meta.title).toBe('YouTube video');
-    expect(meta.channel).toBe('');
+    expect(meta.duration).toBe(0);
   });
 });
 

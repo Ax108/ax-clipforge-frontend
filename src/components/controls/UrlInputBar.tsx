@@ -4,6 +4,8 @@ import {cn} from '../../lib/utils';
 
 interface Props {
   onSubmit: (url: string) => void;
+  /** Clears the field and resets the loaded workspace (players, clip, job). */
+  onClear?: () => void;
   loading: boolean;
   initialValue?: string;
   invalid?: boolean;
@@ -12,6 +14,7 @@ interface Props {
 
 export function UrlInputBar({
   onSubmit,
+  onClear,
   loading,
   initialValue = '',
   invalid = false,
@@ -27,6 +30,11 @@ export function UrlInputBar({
   const submit = (e: {preventDefault: () => void}) => {
     e.preventDefault();
     if (value.trim()) onSubmit(value.trim());
+  };
+
+  const clear = () => {
+    setValue('');
+    onClear?.();
   };
 
   return (
@@ -63,9 +71,9 @@ export function UrlInputBar({
         {value && !loading && (
           <button
             type="button"
-            onClick={() => setValue('')}
+            onClick={clear}
             className="btn-icon text-ink-400 hover:text-ink-100"
-            aria-label="Clear URL">
+            aria-label="Clear and reset workspace">
             <X size={16} aria-hidden="true" />
           </button>
         )}

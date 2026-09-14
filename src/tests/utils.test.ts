@@ -104,7 +104,10 @@ describe('media param parsers', () => {
     expect(parseOperatingMode('full')).toBe('full');
     expect(parseOperatingMode(null)).toBe('clip');
     expect(parsePlayerView('focus')).toBe('focus');
-    expect(defaultQualityFor('flac')).toBe('320kbps');
+    expect(defaultQualityFor('flac')).toBe('best');
+    expect(defaultQualityFor('m4a')).toBe('best');
+    expect(defaultQualityFor('mp3')).toBe('320kbps');
+    expect(defaultQualityFor('mp4')).toBe('1080p');
   });
 });
 

@@ -6,6 +6,8 @@ interface Props {
   downloadUrl: string;
   shareUrl: string;
   onCopy: (message: string) => void;
+  /** When true, the copyable URL is the dedicated /audio extract path. */
+  audioOnly?: boolean;
 }
 
 async function copy(
@@ -18,11 +20,17 @@ async function copy(
   onCopy(success ? ok : fail);
 }
 
-export function DirectUrlCard({downloadUrl, shareUrl, onCopy}: Props) {
+export function DirectUrlCard({
+  downloadUrl,
+  shareUrl,
+  onCopy,
+  audioOnly = false,
+}: Props) {
+  const extractLabel = audioOnly ? 'Audio extract API' : 'Video extract API';
   return (
     <div className="space-y-3">
       <UrlRow
-        label="Direct download API"
+        label={extractLabel}
         value={downloadUrl}
         onCopy={() =>
           void copy(

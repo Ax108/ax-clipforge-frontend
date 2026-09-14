@@ -31,6 +31,7 @@ import {
   downloadButtonLabel,
   formatTime,
   isVideoFormat,
+  isAudioFormat,
   parseMediaFormat,
   parseOperatingMode,
   parsePlayerView,
@@ -125,13 +126,18 @@ function App() {
         const info = await fetchVideoInfo(raw);
         setMeta(info);
         if (!preserveRange) {
+          setDuration(0);
           setStart(0);
           setEnd(DEFAULT_CLIP);
+        } else if (info.duration > 0) {
+          setDuration(Math.round(info.duration));
         }
-      } catch {
+      } catch (err) {
         setMeta(null);
-        setLoadError('Could not load video metadata.');
-        toast('Could not load video', 'error');
+        const message =
+          err instanceof Error ? err.message : 'Could not load video metadata.';
+        setLoadError(message);
+        toast(message, 'error');
       } finally {
         setLoading(false);
       }
@@ -139,13 +145,30 @@ function App() {
     [toast, resetJob],
   );
 
+  const handleClearWorkspace = useCallback(() => {
+    setUrlInput('');
+    setMeta(null);
+    setLoading(false);
+    setLoadError(null);
+    setStart(0);
+    setEnd(DEFAULT_CLIP);
+    setDuration(0);
+    setFormat('mp4');
+    setQuality(defaultQualityFor('mp4'));
+    setMode('clip');
+    setView('split');
+    setPlayhead(0);
+    resetJob();
+  }, [resetJob]);
+
   useEffect(() => {
     if (booted.current) return;
     booted.current = true;
     if (boot.videoHint) void handleLoad(boot.videoHint, true);
   }, [boot.videoHint, handleLoad]);
 
-  const syncId = meta?.id ?? boot.videoHint ?? null;
+  // Prefer loaded meta; fall back to the input while Load is in flight. Clear sets both empty.
+  const syncId = meta?.id ?? parseYouTubeId(urlInput) ?? null;
   useUrlSync({
     v: syncId,
     start: syncId && mode === 'clip' ? start : null,
@@ -328,6 +351,7 @@ function App() {
           </p>
           <UrlInputBar
             onSubmit={url => void handleLoad(url)}
+            onClear={handleClearWorkspace}
             loading={loading}
             initialValue={urlInput}
             invalid={Boolean(loadError)}
@@ -499,6 +523,7 @@ function App() {
                   <DirectUrlCard
                     downloadUrl={downloadUrl}
                     shareUrl={shareUrl}
+                    audioOnly={isAudioFormat(format)}
                     onCopy={handleCopy}
                   />
                 </section>

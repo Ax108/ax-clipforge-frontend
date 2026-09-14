@@ -15,4 +15,25 @@ describe('UrlInputBar', () => {
 
     expect(onSubmit).toHaveBeenCalledWith('https://youtu.be/dQw4w9wgGcQ');
   });
+
+  it('calls onClear when the reset button is pressed', async () => {
+    const user = userEvent.setup();
+    const onClear = jest.fn();
+    render(
+      <UrlInputBar
+        onSubmit={() => {}}
+        onClear={onClear}
+        loading={false}
+        initialValue="https://youtu.be/dQw4w9wgGcQ"
+      />,
+    );
+
+    await user.click(
+      screen.getByRole('button', {name: /clear and reset workspace/i}),
+    );
+    expect(onClear).toHaveBeenCalledTimes(1);
+    expect(
+      (screen.getByLabelText('YouTube URL') as HTMLInputElement).value,
+    ).toBe('');
+  });
 });

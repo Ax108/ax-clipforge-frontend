@@ -46,7 +46,7 @@ describe('DirectUrlCard', () => {
       />,
     );
     expect(screen.getByDisplayValue(/\/api\/v1\/download/)).toBeTruthy();
-    expect(screen.getByLabelText('Open Direct download API')).toBeTruthy();
+    expect(screen.getByLabelText('Open Video extract API')).toBeTruthy();
   });
 
   it('renders the dedicated audio endpoint', () => {
@@ -54,10 +54,12 @@ describe('DirectUrlCard', () => {
       <DirectUrlCard
         downloadUrl="http://localhost:5000/api/v1/audio?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9wgGcQ&format=mp3&quality=320kbps"
         shareUrl="http://localhost:3000/?v=dQw4w9wgGcQ&start=0&end=30&format=mp3"
+        audioOnly
         onCopy={() => {}}
       />,
     );
     expect(screen.getByDisplayValue(/\/api\/v1\/audio/)).toBeTruthy();
+    expect(screen.getByLabelText('Open Audio extract API')).toBeTruthy();
   });
 });
 

@@ -121,7 +121,9 @@ export function isAudioFormat(format: MediaFormat): boolean {
 }
 
 export function defaultQualityFor(format: MediaFormat): string {
-  return isVideoFormat(format) ? '1080p' : '320kbps';
+  if (format === 'mp4') return '1080p';
+  if (format === 'mp3') return '320kbps';
+  return 'best';
 }
 
 export function downloadButtonLabel(opts: {

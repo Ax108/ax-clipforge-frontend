@@ -2,7 +2,11 @@
 
 Standalone Vite + React frontend for trimming, previewing, and downloading YouTube videos or timestamped clips.
 
-Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview, then download. In-app Download talks to [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend): `POST /api/v1/jobs` for MP4, `POST /api/v1/audio/jobs` for MP3/M4A/FLAC, then live SSE progress. Set `VITE_API_URL` if the API is not `http://localhost:5000/api/v1`. Load/title still uses YouTube oEmbed.
+Paste a YouTube URL, choose **Full Video** or **Precision Clip**, preview, then download.
+
+- **Load / preview** uses YouTube oEmbed + iframes in the browser. No Express or yt-dlp. The URL bar **X** clears the field and resets the whole workspace.
+- **Download** talks to [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend): `POST /api/v1/jobs` (MP4) or `POST /api/v1/audio/jobs` (MP3/M4A/FLAC), live SSE progress, then the browser saves the file to the device.
+- Set `VITE_API_URL` if the API is not `http://localhost:5000/api/v1` (see [`.env.example`](./.env.example)).
 
 Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING.md) · [Deployment](./docs/DEPLOYMENT.md)
 
@@ -18,8 +22,9 @@ Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING
 - Dual YouTube preview (original + looping cropped clip) with side-by-side or focus-cropped layout
 - Two-way URL state (`?v=&start=&end=&format=&quality=&mode=&view=`)
 - MP4 1080p/720p/480p and audio MP3/M4A/FLAC
-- Copyable direct-download API URL and workspace share link
+- Copyable direct-download API URL (`/download` or `/audio`) and workspace share link
 - Live extract progress from yt-dlp (queued / downloading % / merging), toasts, shortcuts (Space, `[`, `]`, R)
+- Clear/reset (URL bar X) returns to the empty splash workspace
 
 ## Stack
 
@@ -35,6 +40,7 @@ Docs: [Architecture](./docs/ARCHITECTURE.md) · [Engineering](./docs/ENGINEERING
 
 - [Bun](https://bun.sh) ≥ 1.0
 - Node.js ≥ 24 (engines field; TypeScript and Vite)
+- For **Download** only: ClipForge API on `:5000` (`bun run dev` or Docker). Load/preview works without it.
 
 ## Setup
 
@@ -48,11 +54,13 @@ Prefer `--frozen-lockfile` so install matches `bun.lock` (same as CI). Use plain
 
 `bunfig.toml` sets `ignoreScripts = true`. Follow install with `bun run allow-scripts` so only allow-listed native install scripts run (`esbuild`, `unrs-resolver`, `core-js`).
 
-Optional env (defaults shown):
+Optional env. Copy [`.env.example`](./.env.example) → `.env.local` for local overrides (`.env*` is gitignored except the example):
 
 ```bash
 VITE_API_URL=http://localhost:5000/api/v1
 ```
+
+Hosted builds only need the same variable pointed at the public API (`https://api.example.com/api/v1`). No code change.
 
 ## Scripts
 
@@ -82,16 +90,18 @@ ax-clipforge-frontend/
 │   ├── components/
 │   │   ├── layout/              # Header, Footer
 │   │   ├── player/              # OriginalPlayer, CroppedPlayer, PlayerWorkspace
-│   │   ├── controls/            # URL, mode, trim, format, API URL
+│   │   ├── controls/            # URL (+ clear/reset), mode, trim, format, API URL
 │   │   └── ui/                  # Toasts, download progress
 │   ├── hooks/                   # YouTube player, URL sync, download job, toasts
-│   ├── services/api.ts          # Express client (jobs, audio jobs, oEmbed load)
+│   ├── services/api.ts          # oEmbed load + Express download client
 │   ├── types/index.ts
 │   ├── lib/utils.ts
 │   ├── tests/
+│   ├── vite-env.d.ts            # VITE_API_URL typing
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
+├── .env.example                 # VITE_API_URL template
 ├── scripts/check-install-scripts.mjs
 ├── .github/workflows/ci.yml
 ├── vite.config.ts

@@ -1,46 +1,57 @@
 import {isAudioFormat, parseYouTubeId} from '../lib/utils';
 import type {VideoMetadata, DownloadRequest, DownloadStatus} from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const DEFAULT_API_BASE = 'http://localhost:5000/api/v1';
 
-const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+/** Strip trailing slash so `${API_BASE}/jobs` works for local and hosted env. */
+function resolveApiBase(raw: string | undefined): string {
+  const value = (raw ?? DEFAULT_API_BASE).trim() || DEFAULT_API_BASE;
+  return value.replace(/\/+$/, '');
+}
+
+const API_BASE = resolveApiBase(import.meta.env.VITE_API_URL);
 
 export function parseVideoId(input: string): string | null {
   return parseYouTubeId(input);
 }
 
+/**
+ * Preview metadata only — YouTube oEmbed in the browser.
+ * Duration comes from the IFrame player. Does not call the Express API;
+ * yt-dlp runs only when the user starts a download.
+ */
 export async function fetchVideoInfo(url: string): Promise<VideoMetadata> {
   const id = parseVideoId(url);
   if (!id) throw new Error('Invalid YouTube URL');
 
-  await delay(500);
-
-  let title = 'YouTube video';
-  let channel = '';
-  const duration = 0;
+  const watchUrl = `https://www.youtube.com/watch?v=${id}`;
+  const fallback: VideoMetadata = {
+    id,
+    url: watchUrl,
+    title: 'YouTube video',
+    duration: 0,
+    thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    channel: '',
+    availableQualities: ['1080p', '720p', '480p'],
+  };
 
   try {
     const res = await fetch(
-      `https://www.youtube-nocookie.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`,
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`,
     );
-    if (res.ok) {
-      const j = await res.json();
-      title = j.title || title;
-      channel = j.author_name || '';
-    }
+    if (!res.ok) return fallback;
+    const data = (await res.json()) as {
+      title?: string;
+      author_name?: string;
+    };
+    return {
+      ...fallback,
+      title: data.title?.trim() || fallback.title,
+      channel: data.author_name?.trim() || '',
+    };
   } catch {
-    /* offline / CORS — keep defaults */
+    return fallback;
   }
-
-  return {
-    id,
-    url: `https://www.youtube.com/watch?v=${id}`,
-    title,
-    duration,
-    thumbnailUrl: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-    channel,
-    availableQualities: ['1080p', '720p', '480p'],
-  };
 }
 
 export interface DownloadProgress {
