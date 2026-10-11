@@ -31,7 +31,7 @@ Runs: oxlint → oxfmt check → `tsc -b` → `tsc:app` (no tests) → Jest → 
 
 - Strict tsconfig: `verbatimModuleSyntax`, `erasableSyntaxOnly`, unused locals/params, no fallthrough.
 - oxlint React plugin is **frontend-only**. [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend) omits it.
-- Tests live in `src/tests/`. Slider and download-label cases must stay aligned with trim-gap and `downloadButtonLabel` behavior. UrlInputBar clear must call `onClear` (full workspace reset in `App`). `formatStartJobError` / `triggerDownload` must keep a clear message for API **429**.
+- Tests live in `src/tests/`. Jest transforms them with Babel 8 (`babel.jest.cjs`). `@babel/preset-typescript` takes no `allowDeclareFields` option. Fetch mocks assign `globalThis.fetch`. Slider and download-label cases must stay aligned with trim-gap and `downloadButtonLabel` behavior. UrlInputBar clear must call `onClear` (full workspace reset in `App`). `formatStartJobError` / `triggerDownload` must keep a clear message for API **429**.
 - Do not add Zustand unless global store is actually needed.
 - `VITE_API_URL` is the Express base at [https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend) (`/jobs`, `/audio/jobs`, `/download`, `/audio`). Defaults in code and `.env.example`. Download requires that API (including its IP rate limits). Load uses YouTube oEmbed and does not call `/info`.
 

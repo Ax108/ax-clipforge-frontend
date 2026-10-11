@@ -23,9 +23,12 @@ COPY vite.config.ts index.html ./
 COPY public ./public
 COPY src ./src
 
-# API base URL passed during build (e.g. from compose build args)
-ARG VITE_API_URL
+# Baked into the bundle. Coolify can override this build arg.
+# `bun run dev` does not use this image and stays on localhost.
+ARG VITE_API_URL=https://temp2.astrax108.com/api/v1
+ARG VITE_CLIPFORGE_TOKEN=
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_CLIPFORGE_TOKEN=${VITE_CLIPFORGE_TOKEN}
 
 # Compile TypeScript and bundle frontend with Vite
 RUN bun run build
@@ -35,24 +38,7 @@ FROM nginx:alpine
 
 # Copy built assets to Nginx html directory
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Configure SPA fallback and static asset caching
-RUN printf '%s\n' \
-  'server {' \
-  '    listen 80;' \
-  '    server_name _;' \
-  '    root /usr/share/nginx/html;' \
-  '    index index.html;' \
-  '    gzip on;' \
-  '    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript image/svg+xml;' \
-  '    location / {' \
-  '        try_files $uri $uri/ /index.html;' \
-  '    }' \
-  '    location ~* \.(?:css|js|woff2?|svg|png|jpg|jpeg|gif|ico|webp)$ {' \
-  '        expires 1y;' \
-  '        add_header Cache-Control "public, immutable";' \
-  '    }' \
-  '}' > /etc/nginx/conf.d/default.conf
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

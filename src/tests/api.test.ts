@@ -18,7 +18,7 @@ describe('fetchVideoInfo', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
-    global.fetch = fetchMock;
+    globalThis.fetch = fetchMock;
   });
 
   afterEach(() => {
@@ -72,7 +72,7 @@ describe('buildDownloadUrl / triggerDownload', () => {
 
   beforeEach(() => {
     fetchMock.mockReset();
-    global.fetch = fetchMock;
+    globalThis.fetch = fetchMock;
   });
 
   afterEach(() => {

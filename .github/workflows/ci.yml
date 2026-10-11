@@ -51,6 +51,9 @@ jobs:
       - name: Run verify (lint, format, tsc, tsc:app, test, fallow dead-code)
         run: bun verify
 
+      - name: Production build
+        run: bun run build
+
   audit:
     name: Dependency audit & install-script gate
     runs-on: ubuntu-latest

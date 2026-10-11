@@ -12,24 +12,29 @@ bun run dev
 
 UI: `http://localhost:5173`
 
+CI runs `bun run build` after verify. `VITE_API_URL` is embedded at build time; the local default stays `http://localhost:5000/api/v1`.
+
 Download needs the Express API on `:5000` ([https://github.com/Ax108/ax-clipforge-backend](https://github.com/Ax108/ax-clipforge-backend)). `VITE_API_URL` defaults to `http://localhost:5000/api/v1` (copy `.env.example` → `.env.local` to override). Load/preview works without that API (oEmbed + YouTube iframes). If the API rate-limits the UI (`429`), Download shows a toast; hammering extract from one IP can hit the backend `RATE_LIMIT_EXTRACT_MAX` (default 10 / 15 minutes).
 
 The API can run as `bun run dev` or `bun run docker:up` (Redis sidecar). That is local Docker, not a public API.
 
-## Later (not done)
+## Coolify
 
-Hosting this frontend on **Vercel, Netlify, or Render** is possible. That hosted origin must be added to the backend `CORS_ORIGINS` allowlist.
+Public UI: `https://temp1.astrax108.com`. API: `https://temp2.astrax108.com`.
 
-A hosted UI **cannot** reach `localhost` or local Docker on your PC. You would need a **public HTTPS** ClipForge API (hosted container or reverse proxy) and set the same env used locally:
+`bun run dev` stays on `http://localhost:5000/api/v1`. The Docker image bakes the public API URL unless Coolify overrides the build args.
+
+Coolify resource: Dockerfile, port **80**, domain `https://temp1.astrax108.com`.
+
+Build arguments:
 
 ```bash
-VITE_API_URL=https://api.example.com/api/v1
+VITE_API_URL=https://temp2.astrax108.com/api/v1
+VITE_CLIPFORGE_TOKEN=<same secret as backend CLIPFORGE_TOKEN>
 ```
 
-No frontend code changes for hosting — only that env (and add the UI origin to backend `CORS_ORIGINS`).
-
-Until a later plan: do not assume a cloud backend exists.
+`VITE_API_URL` and `VITE_CLIPFORGE_TOKEN` are embedded at image build. Changing them requires a rebuild. Nginx serves the bundle and sends a CSP that allows `https://temp2.astrax108.com` and `http://localhost:5000`. `public/_headers` carries the same `connect-src` for other static hosts.
 
 ## Static headers
 
-`public/_headers` is for hosts that honor Cloudflare-style `_headers` (CSP). Vercel/Netlify need their own header config if you go there; that is not wired in this pass.
+`public/_headers` and `docker/nginx.conf` both allow the local API and `https://temp2.astrax108.com`. A location that sets its own `add_header` repeats the CSP, because Nginx does not inherit `add_header` into that location.

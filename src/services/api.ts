@@ -10,6 +10,19 @@ function resolveApiBase(raw: string | undefined): string {
 }
 
 const API_BASE = resolveApiBase(import.meta.env.VITE_API_URL);
+const ACCESS_TOKEN = (import.meta.env.VITE_CLIPFORGE_TOKEN ?? '').trim();
+
+function withAccessToken(url: string): string {
+  if (!ACCESS_TOKEN) return url;
+  const next = new URL(url);
+  next.searchParams.set('access_token', ACCESS_TOKEN);
+  return next.toString();
+}
+
+function authHeaders(headers: Record<string, string>): Record<string, string> {
+  if (!ACCESS_TOKEN) return headers;
+  return {...headers, 'X-Clipforge-Token': ACCESS_TOKEN};
+}
 
 export function parseVideoId(input: string): string | null {
   return parseYouTubeId(input);
@@ -127,7 +140,7 @@ export async function triggerDownload(
 ): Promise<string> {
   const res = await fetch(`${API_BASE}${startJobPath(params.format)}`, {
     method: 'POST',
-    headers: {'content-type': 'application/json'},
+    headers: authHeaders({'content-type': 'application/json'}),
     body: JSON.stringify(params),
   });
   let body: JobPublic & {error?: string; message?: string} = {
@@ -160,7 +173,9 @@ function listenJobEvents(
   onProgress: (p: DownloadProgress) => void,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const source = new EventSource(`${API_BASE}/jobs/${jobId}/events`);
+    const source = new EventSource(
+      withAccessToken(`${API_BASE}/jobs/${jobId}/events`),
+    );
     const onProgressEvent = (ev: MessageEvent<string>) => {
       let data: JobPublic;
       try {
@@ -180,7 +195,9 @@ function listenJobEvents(
     };
     source.addEventListener('progress', onProgressEvent);
     source.onerror = () => {
-      void fetch(`${API_BASE}/jobs/${jobId}`)
+      void fetch(withAccessToken(`${API_BASE}/jobs/${jobId}`), {
+        headers: authHeaders({}),
+      })
         .then(async res => {
           if (!res.ok) return;
           const data = (await res.json()) as JobPublic;
@@ -209,6 +226,7 @@ export function buildDownloadUrl(params: DownloadRequest): string {
   });
   if (params.start != null) qs.set('start', String(Math.floor(params.start)));
   if (params.end != null) qs.set('end', String(Math.floor(params.end)));
+  if (ACCESS_TOKEN) qs.set('access_token', ACCESS_TOKEN);
   return `${API_BASE}${extractUrlPath(params.format)}?${qs.toString()}`;
 }
 
