@@ -80,6 +80,8 @@
       "esbuild": true,
       "unrs-resolver": true,
       "core-js": true,
+      "jest>@jest/core>jest-haste-map>@parcel/watcher": false,
+      "jest>@jest/core>jest-resolve>unrs-resolver": false,
       "$root$": false
     }
   }
